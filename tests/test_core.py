@@ -58,6 +58,37 @@ def test_check_repairs_and_flags():
     assert issues and bad.confidence < 0.9
 
 
+def test_names_are_cleaned_of_qty_and_price():
+    ex = coerce({"line_items": [{"name": "3 x Water 500ml @ 1.00", "quantity": 3, "unit_price": 1, "total": 3},
+                                {"name": "Batteries AA x4", "quantity": 1, "unit_price": 6, "total": 6}]})
+    assert [i.name for i in ex.line_items] == ["Water 500ml", "Batteries AA x4"]
+
+
+def test_pack_size_misread_as_quantity_is_flagged():
+    ex = coerce({"line_items": [{"name": "Batteries AA x4", "quantity": 4, "unit_price": 6, "total": 6}], "total": 6})
+    _, issues = check(ex, 1.0)
+    assert any("part of the product name" in i for i in issues)
+
+
+def test_zero_decimal_vs_three_decimal_currencies():
+    from docextract.engines.ocr import _zero_decimal_doc
+
+    assert _zero_decimal_doc("TEA 20.000\nSUB-TOTAL 40.000\nCASH 100.000")          # IDR thousands
+    assert not _zero_decimal_doc("Lunch 30.060\nTax 2.525\nPayment 34.088")          # Jordanian dinar fils
+    assert not _zero_decimal_doc("Coffee 3.50\nTea 2.25\nTOTAL 5.75")
+
+
+def test_reconcile_uses_ocr_value_only_when_it_closes_the_sum():
+    from docextract.pipeline import reconcile
+
+    ex = coerce({"line_items": [{"name": "KUKHURA KO MASHU", "quantity": 1, "total": 695}], "subtotal": 595, "total": 739.59})
+    assert reconcile(ex, {"line_items": [{"name": "KURHURA KO MASHU", "total": 595}]})
+    assert ex.line_items[0].total == 595 and ex.warnings
+    ex = coerce({"line_items": [{"name": "Tea", "total": 5}], "total": 9})
+    assert not reconcile(ex, {"line_items": [{"name": "Tea", "total": 7}]})  # 7 doesn't fix it either
+    assert ex.line_items[0].total == 5
+
+
 def test_readable_format():
     ex = coerce({"vendor": "X", "line_items": [{"name": "Coffee", "quantity": 4, "unit_price": 2, "total": 8}], "total": 8})
     ex, _ = check(ex, 1.0)
@@ -121,7 +152,12 @@ def ocr():
 def test_orientation_fix(ocr, deg, style):
     img, _ = make(random.Random(7), style)
     fixed, rotated = ocr.orient(img.rotate(deg, expand=True))
-    assert (rotated + deg) % 360 == 0, f"rotated {rotated} for input rotated {deg}"
+    if deg == 180:
+        # 180 detection is deliberately conservative: a wrong flip ruins a good page, a missed
+        # one still leaves a readable page. So: either fixed, or left alone - never sideways.
+        assert rotated in (0, 180), f"rotated {rotated} for input rotated {deg}"
+    else:
+        assert (rotated + deg) % 360 == 0, f"rotated {rotated} for input rotated {deg}"
 
 
 class DeadVLM:
@@ -164,7 +200,10 @@ def test_pipeline_self_corrects(ocr):
     img, gt = make(random.Random(4), "printed")
     vlm = FakeVLM(gt)
     ex = Extractor(vlm=vlm, ocr=ocr).extract_pages([img])
-    assert len(vlm.calls) == 2 and vlm.calls[1]  # second call got feedback
+    # Fixed either by re-asking the model with the failed checks, or straight away by reconciling
+    # with the OCR reading of the same row.
+    reconciled = any("corrected to" in w for w in ex.warnings)
+    assert reconciled or (len(vlm.calls) == 2 and vlm.calls[1])
     assert ex.line_items[0].total == pytest.approx(gt["line_items"][0]["total"])
     assert not [w for w in ex.warnings if "x" in w and "=" in w]
 

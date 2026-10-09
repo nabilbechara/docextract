@@ -25,7 +25,7 @@ log = logging.getLogger(__name__)
 MODEL = os.environ.get("DOCEXTRACT_MODEL", "qwen3-vl:4b")
 URLS = os.environ.get("DOCEXTRACT_VLM_URLS", os.environ.get("OLLAMA_URL", "http://localhost:11434,http://localhost:8080"))
 TIMEOUT = float(os.environ.get("DOCEXTRACT_VLM_TIMEOUT", "300"))
-MAX_TOKENS = int(os.environ.get("DOCEXTRACT_MAX_TOKENS", "6144"))
+MAX_TOKENS = int(os.environ.get("DOCEXTRACT_MAX_TOKENS", "3072"))
 
 PROMPT = """You are a meticulous document data-entry clerk. Read this document image \
 (it may be a printed or HANDWRITTEN receipt, invoice, bill, delivery note, order form, \
@@ -34,8 +34,11 @@ at an angle, crumpled, faded or in poor light) and transcribe ALL of its data in
 
 Rules:
 - line_items: one entry per row of the document's item table / list, in order. Never merge, skip or repeat rows.
-  - name: the item description exactly as written (keep the document's language; fix only obvious misreads).
-  - quantity: the count/amount for that row as a number ("2x", "2 @", "qty 2", "x2" -> 2; 0.45 kg -> 0.45 with unit "kg"). null if not shown.
+  - name: the item description exactly as written (keep the document's language; fix only obvious misreads), \
+WITHOUT the quantity, '@' and price parts ("3 x Water 500ml @ 1.00" -> "Water 500ml").
+  - quantity: how many were bought on that row, as a number: usually printed before the name ("2 x", "2 @") or in a \
+Qty column; for sold-by-weight rows the weight (0.45 kg -> 0.45 with unit "kg"). Numbers that are part of the product \
+description (pack size "x4", "6-pack", volume "500ml", "1L", weight "2kg" in the name) are NOT the quantity. null if not shown.
   - unit_price: price per unit. null if not shown.
   - total: the row's amount. null if not shown.
   - extra: EVERY other column or detail for that row (SKU, code, discount, VAT %, size, date, notes...) as key/value pairs, keyed by the column header.
@@ -44,6 +47,7 @@ customer, addresses, phone, tax ID, table, cashier, payment method, card last di
 service charge, due date, terms, handwritten notes, stamps (e.g. "stamp": "PAID"), signature present, exchange rate, \
 totals in a second currency, etc. Use the label printed on the document as key (or a short descriptive key if unlabeled). \
 Leave nothing out.
+- vendor: the business / issuer name (usually the largest text at the top or the letterhead).
 - subtotal, tax, total: numbers as printed. total = the final amount to pay. If there are several taxes, \
 tax = their sum and list each one in fields.
 - Numbers: plain JSON numbers, no currency symbols or thousands separators, '.' as decimal point \
@@ -51,6 +55,13 @@ tax = their sum and list each one in fields.
 - currency: ISO code if you can tell (USD, EUR, LBP, GBP, AED, SAR...), else the symbol.
 - date: YYYY-MM-DD if unambiguous, otherwise as written.
 - document_type: one short word like receipt, invoice, bill, delivery_note, purchase_order, quote, statement, form, table, other.
+- quantity examples: "12 Bunches Violets at 3 for $1.00" -> quantity 12; "2 @ 15.030" -> quantity 2, unit_price 15.03.
+- Ledgers and old invoices often split each amount into two ruled sub-columns, whole units and cents: \
+"7 | 74" means 7.74 and "706 | 00" means 706.00. Nested breakdown lines (indented, amounts in an inner column) \
+belong to the row whose amount is in the outer column: list only the outer rows as line_items and put the \
+breakdown in that row's extra.
+- A written receipt or letter ("Received from X the sum of £5 for ...") is one line item: what was paid for, with that amount.
+- Payment, cash tendered, change, service charge and tax lines are NOT line items; put them in fields / tax.
 - Handwriting: read carefully digit by digit; use the row arithmetic (quantity x unit_price = total) and the \
 column sums to resolve ambiguous digits.
 - Do not invent rows or values that are not on the document.

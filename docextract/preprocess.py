@@ -14,7 +14,7 @@ MAX_PAGES = 30
 # phone photo is shrunk to something an 8 GB GPU encodes quickly.
 MAX_PIXELS = 2_400_000
 MAX_SIDE = 3600
-MIN_SIDE = 800
+MIN_SIDE = 1280  # small scans get upscaled: the vision model reads tiny text poorly
 
 
 class UnsupportedDocument(ValueError):

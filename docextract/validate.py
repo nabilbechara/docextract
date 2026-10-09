@@ -80,7 +80,7 @@ def coerce(raw: dict) -> Extraction:
     for it in raw.get("line_items") or raw.get("items") or []:
         if not isinstance(it, dict):
             continue
-        name = opt_str(it.get("name") or it.get("description") or it.get("item")) or ""
+        name = clean_name(opt_str(it.get("name") or it.get("description") or it.get("item")) or "")
         li = LineItem(
             name=name,
             quantity=parse_number(it.get("quantity", it.get("qty"))),
@@ -105,6 +105,20 @@ def coerce(raw: dict) -> Extraction:
     )
 
 
+_LEAD_QTY = re.compile(r"^\s*\d+(?:[.,]\d+)?\s*[x×*]\s+")
+_TRAIL_PRICE = re.compile(r"\s*@\s*[$€£]?\s*\d[\d.,]*\s*$")
+
+
+def clean_name(name: str) -> str:
+    """'3 x Water 500ml @ 1.00' -> 'Water 500ml' (quantity and price live in their own fields)."""
+    out = _TRAIL_PRICE.sub("", _LEAD_QTY.sub("", name)).strip()
+    return out or name
+
+
+def _fmt(x: float) -> str:
+    return str(int(x)) if float(x).is_integer() else str(x)
+
+
 def _close(a: float, b: float) -> bool:
     return abs(a - b) <= max(0.02, 0.01 * max(abs(a), abs(b)))
 
@@ -126,8 +140,12 @@ def check(ex: Extraction, base_confidence: float) -> tuple[Extraction, list[str]
             if _close(q * p, t):
                 passed += 1
             elif _close(p, t) and q != 1:
-                # Common: the "price" column is already the line total.
-                passed += 1
+                # Either the price column is really the line total, or a pack size / weight in the
+                # name ("x4", "2kg") was misread as the quantity. Let the model look again.
+                issues.append(
+                    f"line {i} '{it.name}': quantity {_fmt(q)} x unit price {p} does not equal line total {t}; "
+                    "if the number is part of the product name (pack size, weight, volume) the quantity is 1"
+                )
             else:
                 issues.append(f"line {i} '{it.name}': {q} x {p} = {q * p:.2f} but line total is {t}")
         elif q is not None and t is not None and p is None and q:
@@ -162,6 +180,11 @@ def check(ex: Extraction, base_confidence: float) -> tuple[Extraction, list[str]
         run += 1
         if _close(ex.subtotal + ex.tax, ex.total):
             passed += 1
+        elif ex.tax > 0.01 and _close(ex.subtotal, ex.total):
+            issues.append(
+                f"total {ex.total} equals the subtotal although tax {ex.tax} is listed; "
+                "total must be the final amount to pay (usually the largest, bold TOTAL line)"
+            )
         else:
             ex.warnings.append(
                 f"subtotal {ex.subtotal} + tax {ex.tax} != total {ex.total} (could be discounts/fees/tips)"

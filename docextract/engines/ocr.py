@@ -26,11 +26,24 @@ def _has_words(s: str) -> bool:
     return bool(re.search(r"[A-Za-z؀-ۿЀ-ӿ]{2,}", s))
 
 
+_THREE_DEC_CUR = re.compile(r"\b(JOD|JD|KWD|KD|BHD|BD|OMR|TND|IQD|LYD|dinars?|fils|baisa)\b", re.I)
+_NO_CENTS_CUR = re.compile(r"\b(Rp|IDR|LBP|L\.L|VND|KRW|UGX|PYG)\b|ل\.ل|₫|₩", re.I)
+
+
 def _zero_decimal_doc(text: str) -> bool:
-    """True when the document writes amounts like 40.000 / 40,000 with no cents (IDR, LBP, ...)."""
-    three = len(re.findall(r"\d[.,]\d{3}(?![\d.,])", text))
+    """True when the document writes amounts like 40.000 / 40,000 with no cents (IDR, LBP, ...),
+    as opposed to 3-decimal currencies (Jordanian/Kuwaiti dinar: 15.030 = 15 dinars 30 fils)."""
+    if _THREE_DEC_CUR.search(text):
+        return False
+    groups = re.findall(r"\d[.,](\d{3})(?![\d.,])", text)
     two = len(re.findall(r"\d[.,]\d{2}(?![\d.,])", text))
-    return three >= 2 and three > 2 * two
+    if len(groups) < 2 or len(groups) <= 2 * two:
+        return False
+    if _NO_CENTS_CUR.search(text):
+        return True
+    # Thousands groups are mostly round ('56.000', '7.500'); fils/milli-units are not ('2.525').
+    round_ = sum(g.endswith("00") for g in groups)
+    return round_ >= 0.5 * len(groups)
 _QTY_PREFIX = re.compile(r"^\s*(?P<q>\d+(?:[.,]\d+)?)\s*(?:x|X|×|\*|pcs?|@)?\s+(?P<rest>.+)$")
 _QTY_AT = re.compile(rf"(?P<q>\d+(?:[.,]\d+)?)\s*(?:x|X|×|@)\s*(?P<p>{_PRICE})")
 _DATE = re.compile(
@@ -142,25 +155,34 @@ class OCREngine:
         return parse_lines(self.lines(img))
 
 
-_FOOTER = re.compile(r"\b(total|subtotal|thank|merci|shukran|signature|balance|amount\s*due|change|cash|tva|vat|tax)\b", re.I)
-_HEADER = re.compile(r"\b(date|invoice|receipt|bill\s*to|no\.|tel|phone|order|table)\b", re.I)
+_FOOTER = re.compile(
+    r"(total|subtotal|thank|merci|danke|gracias|grazie|obrigado|shukran|signature|balance|amount\s*due|change|"
+    r"cash|tva|vat|mwst|ptu|tax|summe|gesamt|suma|razem|totale|toplam|jumlah|сума|сумма|итого|разом|решта|"
+    r"дякуємо|спасибо|المجموع|الإجمالي|شكرا)",
+    re.I,
+)
+# Words that (almost) only appear at the top. Dates are NOT used: receipts often print them last.
+_HEADER = re.compile(r"\b(invoice|facture|rechnung|factuur|bill\s*to|tel|phone|address|tax\s*invoice)\b", re.I)
 
 
 def _upside_down(result: list, height: int) -> bool:
+    """Conservative: only flip when footer words clearly sit above header words, or several
+    footer words sit at the very top. A wrong flip is far worse than a missed one (the vision
+    model copes with upside-down text much better than with a needlessly flipped page)."""
     foot, head = [], []
     for box, text, _ in result:
         y = sum(p[1] for p in box) / 4 / max(1, height)
         if _FOOTER.search(text):
             foot.append(y)
-        elif _HEADER.search(text) or _DATE.search(text):
+        elif _HEADER.search(text):
             head.append(y)
-    if not foot and not head:
+    if not foot:
         return False
-    f = sum(foot) / len(foot) if foot else None
-    h = sum(head) / len(head) if head else None
-    if f is not None and h is not None:
-        return f < h - 0.1
-    return (f is not None and f < 0.3) or (h is not None and h > 0.7)
+    f = sum(foot) / len(foot)
+    if head:
+        h = sum(head) / len(head)
+        return f < h - 0.2
+    return len(foot) >= 2 and f < 0.35
 
 
 def _group_rows(boxes: list[tuple[float, float, float, str]]) -> list[str]:

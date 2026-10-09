@@ -13,7 +13,7 @@ import re
 import time
 
 from .engines import OCREngine, VLMEngine
-from .engines.ocr import parse_lines
+from .engines.ocr import _zero_decimal_doc, parse_lines
 from .preprocess import Page, enhance, load_document
 from .schema import Extraction
 from .validate import check, coerce
@@ -90,17 +90,36 @@ class Extractor:
     def _vlm_page(self, img, hint: str | None, shadow_raw: dict, exact_text: bool) -> Extraction | None:
         best: tuple[Extraction, list[str]] | None = None
         feedback = None
+        failed_last = False
+        thousands = bool(hint) and _zero_decimal_doc(hint)
+        if thousands:
+            note = (
+                "This document writes amounts with '.' or ',' as THOUSANDS separators and no cents "
+                "(e.g. 25.000 or 25,000 means twenty-five thousand): output 25000, not 25."
+            )
+            hint = f"{note}\n{hint}"
         for attempt in range(MAX_ATTEMPTS):
             # 1: as-is. 2: same image + the failed checks. 3: contrast-enhanced image, slightly
-            # warmer sampling, to shake loose a different reading of ambiguous digits.
+            # warmer sampling, to shake loose a different reading of ambiguous digits. After a
+            # failed call (e.g. a repetition loop) always retry warmer: greedy decoding would
+            # just loop again.
             last = attempt == 2
             page_img = enhance(img) if last else img
             try:
-                raw = self.vlm.extract(page_img, feedback=feedback, ocr_hint=hint, hot=last)
+                raw = self.vlm.extract(page_img, feedback=feedback, ocr_hint=hint, hot=last or failed_last)
+                failed_last = False
             except Exception as e:  # noqa: BLE001 - network, timeout, bad JSON, truncation
                 log.warning("vlm attempt %d failed: %s", attempt + 1, e)
+                failed_last = True
                 continue
-            ex, issues = check(coerce(raw), self.vlm.base_confidence)
+            ex = coerce(raw)
+            if thousands:
+                _rescale_thousands(ex)
+            ex, issues = check(ex, self.vlm.base_confidence)
+            if issues and reconcile(ex, shadow_raw):
+                kept = ex.warnings
+                ex, issues = check(ex, self.vlm.base_confidence * 0.95)
+                ex.warnings = kept + [w for w in ex.warnings if w not in kept]
             issues += cross_check(ex, shadow_raw, hint, exact_text)
             ex.confidence = round(ex.confidence * (0.85 if issues else 1.0), 3)
             if best is None or _better((ex, issues), best):
@@ -134,9 +153,14 @@ def cross_check(ex: Extraction, shadow_raw: dict, text: str | None, exact_text: 
             "these rows were found by OCR but are missing from the reading: "
             + "; ".join(f"'{m.name}' {m.total}" for m in missed[:8])
         )
-    # 2. Total disagreement.
-    if shadow.total is not None and ex.total is not None and abs(shadow.total - ex.total) > 0.011 and exact_text:
-        issues.append(f"the document text shows total {shadow.total} but the reading says {ex.total}")
+    # 2. Total disagreement. With exact PDF text any mismatch is suspect; with OCR only flag the
+    # classic slip of reporting the subtotal when the printed TOTAL is larger.
+    if shadow.total is not None and ex.total is not None and abs(shadow.total - ex.total) > 0.011:
+        if exact_text or (shadow.total > ex.total and ex.subtotal is not None and abs(ex.total - ex.subtotal) < 0.011):
+            issues.append(
+                f"the document's TOTAL line appears to read {shadow.total} but the reading says {ex.total}; "
+                "total must be the final amount to pay including tax, service and fees"
+            )
     # 3. With an exact PDF text layer every printed amount must appear in it.
     if exact_text and text:
         present = {_n(m) for m in _AMT.findall(text.replace(",", "."))}
@@ -144,6 +168,54 @@ def cross_check(ex: Extraction, shadow_raw: dict, text: str | None, exact_text: 
         if unseen:
             issues.append(f"line totals not present in the document text: {unseen[:6]}")
     return issues
+
+
+def reconcile(ex: Extraction, shadow_raw: dict) -> bool:
+    """If the rows don't add up to the subtotal/total, try the OCR's value for the same row
+    (matched by name). Apply it only when that makes the arithmetic close exactly."""
+    import difflib
+
+    totals = [it.total for it in ex.line_items]
+    if not ex.line_items or any(t is None for t in totals):
+        return False
+    targets = [t for t in (ex.subtotal, ex.total, (ex.total - ex.tax) if ex.total is not None and ex.tax else None) if t is not None]
+    s = sum(totals)
+    if not targets or any(abs(s - t) <= 0.011 for t in targets):
+        return False
+    shadow = coerce(shadow_raw).line_items
+    for i, it in enumerate(ex.line_items):
+        for sh in shadow:
+            if sh.total is None or abs(sh.total - it.total) < 0.011:
+                continue
+            if difflib.SequenceMatcher(None, it.name.lower(), sh.name.lower()).ratio() < 0.7:
+                continue
+            new_sum = s - it.total + sh.total
+            if any(abs(new_sum - t) <= 0.011 for t in targets):
+                ex.warnings.append(f"row {i + 1} '{it.name}': amount {it.total} corrected to {sh.total} (OCR reading; makes the totals add up)")
+                if it.unit_price is not None and it.quantity:
+                    it.unit_price = round(sh.total / it.quantity, 4)
+                it.total = sh.total
+                return True
+    return False
+
+
+def _rescale_thousands(ex: Extraction) -> None:
+    """Model read '25.000' as 25.0 on a no-cents document: every amount is 1000x too small."""
+    amounts = [v for it in ex.line_items for v in (it.unit_price, it.total) if v] + [
+        v for v in (ex.subtotal, ex.tax, ex.total) if v
+    ]
+    if not amounts or max(amounts) >= 1000:
+        return
+    # On these documents real amounts are whole thousands-ish; tiny values with <=3 decimals
+    # are the misread form.
+    if all(round(v * 1000) == round(v * 1000, 6) for v in amounts):
+        for it in ex.line_items:
+            it.unit_price = round(it.unit_price * 1000) if it.unit_price is not None else None
+            it.total = round(it.total * 1000) if it.total is not None else None
+        for attr in ("subtotal", "tax", "total"):
+            v = getattr(ex, attr)
+            setattr(ex, attr, round(v * 1000) if v is not None else None)
+        ex.warnings.append("amounts used '.' as a thousands separator; rescaled")
 
 
 def _n(s: str) -> float:
