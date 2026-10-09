@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic>=2
+httpx
+pillow>=10.1
+pypdfium2
+rapidocr-onnxruntime
+numpy
+pillow-heif

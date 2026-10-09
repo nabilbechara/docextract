@@ -1,0 +1,32 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Fonts for synthetic test documents
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends fonts-dejavu-core fonts-liberation fonts-comic-neue
+
+      - name: Install
+        run: pip install -r requirements.txt pytest
+
+      # Unit + pipeline tests. The vision model is faked (no GPU on CI); OCR, preprocessing,
+      # orientation, validation, self-correction and the HTTP API run for real.
+      - name: Tests
+        run: python -m pytest -q tests
+
+      # Regression guard for the no-GPU fallback engine on the committed synthetic set.
+      - name: OCR fallback benchmark
+        run: python scripts/evaluate.py data/synthetic --engine ocr --quiet

@@ -89,6 +89,18 @@ def test_reconcile_uses_ocr_value_only_when_it_closes_the_sum():
     assert ex.line_items[0].total == 5
 
 
+def test_pack_size_quantity_fixed_from_ocr_row():
+    from docextract.pipeline import fix_pack_sizes
+
+    ex = coerce({"line_items": [{"name": "Rice", "quantity": 2, "unit_price": 2.3, "total": 4.6},
+                                {"name": "Tea", "quantity": 2, "unit_price": 1.5, "total": 3.0}]})
+    fix_pack_sizes(ex, {"line_items": [{"name": "Rice 2kg", "quantity": None, "total": 4.6},
+                                       {"name": "Tea", "quantity": 2, "total": 3.0}]})
+    rice, tea = ex.line_items
+    assert (rice.name, rice.quantity, rice.unit_price) == ("Rice 2kg", 1.0, 4.6)
+    assert tea.quantity == 2  # a real quantity is left alone
+
+
 def test_readable_format():
     ex = coerce({"vendor": "X", "line_items": [{"name": "Coffee", "quantity": 4, "unit_price": 2, "total": 8}], "total": 8})
     ex, _ = check(ex, 1.0)

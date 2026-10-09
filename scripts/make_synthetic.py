@@ -13,9 +13,26 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-FONTS_DIR = Path("C:/Windows/Fonts") if sys.platform == "win32" else Path("/usr/share/fonts")
-PRINT_FONTS = ["consola.ttf", "cour.ttf", "arial.ttf", "lucon.ttf"]
-HAND_FONTS = ["Inkfree.ttf", "segoepr.ttf", "segoesc.ttf", "comic.ttf"]
+FONTS_DIRS = [Path("C:/Windows/Fonts"), Path("/usr/share/fonts"), Path("/Library/Fonts"), Path("/System/Library/Fonts")]
+# Windows names first, then Linux (fonts-dejavu / fonts-liberation / fonts-comic-neue in CI).
+PRINT_FONTS = ["consola.ttf", "cour.ttf", "arial.ttf", "lucon.ttf", "DejaVuSansMono.ttf", "LiberationMono-Regular.ttf"]
+HAND_FONTS = ["Inkfree.ttf", "segoepr.ttf", "segoesc.ttf", "comic.ttf", "ComicNeue-Regular.ttf", "DejaVuSans-Oblique.ttf"]
+BOLD_FONTS = ["arialbd.ttf", "DejaVuSans-Bold.ttf", "LiberationSans-Bold.ttf"]
+
+
+def _find(name: str) -> Path | None:
+    for d in FONTS_DIRS:
+        if (d / name).exists():
+            return d / name
+        if d.exists() and d.name != "Fonts":
+            hit = next(d.rglob(name), None)
+            if hit:
+                return hit
+    return None
+
+
+def _available(names: list[str]) -> list[str]:
+    return [n for n in names if _find(n)] or names[:1]
 
 VENDORS = ["Cafe Beirut", "Green Market", "Hardware Hub", "Pharma Plus", "Tony's Pizza", "Book Corner", "Al Amal Bakery"]
 PRODUCTS = [
@@ -27,8 +44,9 @@ PRODUCTS = [
 
 
 def font(name: str, size: int) -> ImageFont.FreeTypeFont:
+    path = _find(name)
     try:
-        return ImageFont.truetype(str(FONTS_DIR / name), size)
+        return ImageFont.truetype(str(path), size) if path else ImageFont.load_default(size)
     except OSError:
         return ImageFont.load_default(size)
 
@@ -48,8 +66,8 @@ def make(rng: random.Random, style: str) -> tuple[Image.Image, dict]:
     inv = f"{rng.randint(1000, 99999)}"
 
     hand = style == "handwritten"
-    f = font(rng.choice(HAND_FONTS if hand else PRINT_FONTS), 30 if hand else 24)
-    fb = font(rng.choice(HAND_FONTS) if hand else "arialbd.ttf", 38 if hand else 32)
+    f = font(rng.choice(_available(HAND_FONTS if hand else PRINT_FONTS)), 30 if hand else 24)
+    fb = font(rng.choice(_available(HAND_FONTS)) if hand else _available(BOLD_FONTS)[0], 38 if hand else 32)
     W = 760 if hand else 620
     lh = 46 if hand else 34
     H = 260 + lh * (n + 6)

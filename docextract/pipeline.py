@@ -115,6 +115,7 @@ class Extractor:
             ex = coerce(raw)
             if thousands:
                 _rescale_thousands(ex)
+            fix_pack_sizes(ex, shadow_raw)
             ex, issues = check(ex, self.vlm.base_confidence)
             if issues and reconcile(ex, shadow_raw):
                 kept = ex.warnings
@@ -168,6 +169,30 @@ def cross_check(ex: Extraction, shadow_raw: dict, text: str | None, exact_text: 
         if unseen:
             issues.append(f"line totals not present in the document text: {unseen[:6]}")
     return issues
+
+
+_PACK = r"(?:x\s*{q}\b|\b{q}\s*(?:kg|g|gr|l|lt|ltr|ml|cl|oz|lb|lbs|pcs?|pack|pk|ct|stk)\b)"
+
+
+def fix_pack_sizes(ex: Extraction, shadow_raw: dict) -> None:
+    """The model sometimes turns a pack size / weight in the product name ("Rice 2kg",
+    "Batteries AA x4") into the quantity. The OCR row shows the full name and no quantity:
+    if the model's quantity only appears there as that pack size, the real quantity is 1."""
+    shadow = coerce(shadow_raw).line_items
+    for it in ex.line_items:
+        q = it.quantity
+        if q is None or q == 1 or q != int(q) or it.total is None:
+            continue
+        words = set(re.findall(r"\w+", it.name.lower()))
+        for sh in shadow:
+            if sh.quantity not in (None, 1.0) or sh.total is None or abs(sh.total - it.total) > 0.011:
+                continue
+            if not words or not words <= set(re.findall(r"\w+", sh.name.lower())):
+                continue
+            if re.search(_PACK.format(q=int(q)), sh.name, re.I):
+                ex.warnings.append(f"'{sh.name}': '{int(q)}' is a pack size/weight, not the quantity; quantity set to 1")
+                it.name, it.quantity, it.unit_price = sh.name, 1.0, it.total
+                break
 
 
 def reconcile(ex: Extraction, shadow_raw: dict) -> bool:
