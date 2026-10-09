@@ -13,9 +13,24 @@ import numpy as np
 from PIL import Image
 
 from ..validate import parse_number
+from ..validate import parse_number as _parse_number
 
-_PRICE = r"-?\(?[$€£]?\s?\d{1,3}(?:[,.']\d{3})*(?:[.,]\d{1,2})\)?|-?\d+[.,]\d{1,2}|-?\d{1,3}(?:[,.]\d{3})+"
-_PRICE_END = re.compile(rf"(?P<price>{_PRICE})\s*[A-Z]?\s*$")
+_PRICE = r"-?\(?[$€£]?\s?\d{1,3}(?:[,.']\d{3})*(?:[.,]\d{1,2})\)?|-?\d+[.,]\d{1,2}|-?\d{1,3}(?:[,.]\d{3})+|\d{4,}"
+# A trailing tax-code letter or currency word after the amount is common ("12.50 A", "56.000 Rp").
+_PRICE_END = re.compile(rf"(?P<price>{_PRICE})\s*(?:[A-Z]|Rp|IDR|USD|EUR|LBP|L\.L\.?|€|\$)?\s*$")
+_NUM_TOKEN = re.compile(r"\d[\d.,]*")
+_CUR_WORD = re.compile(r"(?i)(?<![a-z])(rp|idr|usd|eur|lbp|l\.l)\.?(?![a-z])|[$€£@x×*]")
+
+
+def _has_words(s: str) -> bool:
+    return bool(re.search(r"[A-Za-z؀-ۿЀ-ӿ]{2,}", s))
+
+
+def _zero_decimal_doc(text: str) -> bool:
+    """True when the document writes amounts like 40.000 / 40,000 with no cents (IDR, LBP, ...)."""
+    three = len(re.findall(r"\d[.,]\d{3}(?![\d.,])", text))
+    two = len(re.findall(r"\d[.,]\d{2}(?![\d.,])", text))
+    return three >= 2 and three > 2 * two
 _QTY_PREFIX = re.compile(r"^\s*(?P<q>\d+(?:[.,]\d+)?)\s*(?:x|X|×|\*|pcs?|@)?\s+(?P<rest>.+)$")
 _QTY_AT = re.compile(rf"(?P<q>\d+(?:[.,]\d+)?)\s*(?:x|X|×|@)\s*(?P<p>{_PRICE})")
 _DATE = re.compile(
@@ -179,14 +194,41 @@ def parse_lines(lines: list[str]) -> dict:
     if re.search(r"\binvoice\b", text, re.I):
         out["document_type"] = "invoice"
 
+    zero_dec = _zero_decimal_doc(text)
+
+    def parse_number(s):  # noqa: F811 - document-aware wrapper around validate.parse_number
+        if zero_dec and s is not None:
+            d = re.sub(r"[^\d]", "", str(s))
+            return (-1.0 if str(s).strip().startswith(("-", "(")) else 1.0) * float(d) if d else None
+        return _parse_number(s)
+
     totals_started = False
+    pending: str | None = None  # a text-only line waiting for its numbers on the next line
     for raw in lines[1:]:
         line = raw.strip()
         pm = _PRICE_END.search(line)
         if not pm:
+            if _has_words(line) and not totals_started and not _SKIP.search(line) and not _TOTAL.search(line):
+                pending = line
+            else:
+                pending = None
             continue
         amount = parse_number(pm.group("price"))
         label = line[: pm.start()].strip(" :.-")
+        bare = _CUR_WORD.sub("", label).strip(" :.-")
+        if not _has_words(bare) and pending and not totals_started:
+            # Wrapped row: name on the previous line, "qty [unit price] total" on this one.
+            nums = [parse_number(x) for x in _NUM_TOKEN.findall(bare)]
+            nums = [n for n in nums if n is not None]
+            qty = unit_price = None
+            if nums and nums[0] == int(nums[0]) and 0 < nums[0] < 1000 and (len(nums) > 1 or nums[0] < 100):
+                qty = nums.pop(0)
+            if nums:
+                unit_price = nums[-1]
+            out["line_items"].append({"name": pending, "quantity": qty, "unit_price": unit_price, "total": amount})
+            pending = None
+            continue
+        pending = None
         if _SUBTOTAL.search(label):
             out["subtotal"] = amount
             totals_started = True
@@ -220,4 +262,30 @@ def parse_lines(lines: list[str]) -> dict:
                 qty, label = q, m.group("rest").strip()
         label = label.strip(" :.-@")
         out["line_items"].append({"name": label, "quantity": qty, "unit_price": unit_price, "total": amount})
+    _split_unlabelled_totals(out)
     return out
+
+
+def _split_unlabelled_totals(out: dict) -> None:
+    """A 'row' whose amount equals the sum of the rows above it is a subtotal whose label
+    OCR could not read (common with handwriting); rows after it are tax/total lines."""
+    items = out["line_items"]
+    running = 0.0
+    for i, it in enumerate(items):
+        t = it.get("total")
+        if t is None:
+            continue
+        if i >= 2 and len(items) - i <= 3 and abs(t - running) < 0.011:
+            if out.get("subtotal") is None:
+                out["subtotal"] = t
+            for rest in items[i + 1 :]:
+                rt = rest.get("total")
+                if rt is None:
+                    continue
+                if out.get("total") is not None and abs(t + rt - out["total"]) < 0.011:
+                    out["tax"] = out.get("tax") or rt
+                elif out.get("total") is None and rt >= t:
+                    out["total"] = rt
+            del items[i:]
+            return
+        running += t
