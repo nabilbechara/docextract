@@ -1,0 +1,22 @@
+{
+  "vendor": "Hardware Hub",
+  "date": "2026-10-07",
+  "line_items": [
+    {
+      "name": "Water 500ml",
+      "quantity": 1,
+      "unit_price": 1.0,
+      "total": 1.0
+    },
+    {
+      "name": "Rice 2kg",
+      "quantity": 2,
+      "unit_price": 4.6,
+      "total": 9.2
+    }
+  ],
+  "subtotal": 10.2,
+  "tax": 1.12,
+  "total": 11.32,
+  "style": "photo"
+}

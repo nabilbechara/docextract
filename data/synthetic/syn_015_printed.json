@@ -1,0 +1,34 @@
+{
+  "vendor": "Green Market",
+  "date": "2026-10-04",
+  "line_items": [
+    {
+      "name": "Notebook A5",
+      "quantity": 3,
+      "unit_price": 2.75,
+      "total": 8.25
+    },
+    {
+      "name": "Chicken Wrap",
+      "quantity": 1,
+      "unit_price": 6.5,
+      "total": 6.5
+    },
+    {
+      "name": "Bandages",
+      "quantity": 1,
+      "unit_price": 5.25,
+      "total": 5.25
+    },
+    {
+      "name": "Manakish Zaatar",
+      "quantity": 5,
+      "unit_price": 1.25,
+      "total": 6.25
+    }
+  ],
+  "subtotal": 26.25,
+  "tax": 2.62,
+  "total": 28.87,
+  "style": "printed"
+}

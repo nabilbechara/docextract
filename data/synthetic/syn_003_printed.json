@@ -1,0 +1,52 @@
+{
+  "vendor": "Cafe Beirut",
+  "date": "2026-11-21",
+  "line_items": [
+    {
+      "name": "Paint 1L",
+      "quantity": 5,
+      "unit_price": 18.5,
+      "total": 92.5
+    },
+    {
+      "name": "Bandages",
+      "quantity": 3,
+      "unit_price": 5.25,
+      "total": 15.75
+    },
+    {
+      "name": "Croissant",
+      "quantity": 1,
+      "unit_price": 2.2,
+      "total": 2.2
+    },
+    {
+      "name": "Batteries AA x4",
+      "quantity": 3,
+      "unit_price": 6.0,
+      "total": 18.0
+    },
+    {
+      "name": "Water 500ml",
+      "quantity": 3,
+      "unit_price": 1.0,
+      "total": 3.0
+    },
+    {
+      "name": "Hammer",
+      "quantity": 2,
+      "unit_price": 12.0,
+      "total": 24.0
+    },
+    {
+      "name": "Chicken Wrap",
+      "quantity": 2,
+      "unit_price": 6.5,
+      "total": 13.0
+    }
+  ],
+  "subtotal": 168.45,
+  "tax": 16.84,
+  "total": 185.29,
+  "style": "printed"
+}

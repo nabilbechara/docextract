@@ -1,0 +1,46 @@
+{
+  "vendor": "Al Amal Bakery",
+  "date": "2026-03-26",
+  "line_items": [
+    {
+      "name": "Pen Blue",
+      "quantity": 4,
+      "unit_price": 0.8,
+      "total": 3.2
+    },
+    {
+      "name": "Chicken Wrap",
+      "quantity": 1,
+      "unit_price": 6.5,
+      "total": 6.5
+    },
+    {
+      "name": "Paint 1L",
+      "quantity": 1,
+      "unit_price": 18.5,
+      "total": 18.5
+    },
+    {
+      "name": "Screws M4 (box)",
+      "quantity": 3,
+      "unit_price": 4.99,
+      "total": 14.97
+    },
+    {
+      "name": "Olive Oil 1L",
+      "quantity": 4,
+      "unit_price": 9.9,
+      "total": 39.6
+    },
+    {
+      "name": "Manakish Zaatar",
+      "quantity": 2,
+      "unit_price": 1.25,
+      "total": 2.5
+    }
+  ],
+  "subtotal": 85.27,
+  "tax": 9.38,
+  "total": 94.65,
+  "style": "photo"
+}

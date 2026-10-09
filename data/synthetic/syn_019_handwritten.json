@@ -1,0 +1,28 @@
+{
+  "vendor": "Book Corner",
+  "date": "2026-01-10",
+  "line_items": [
+    {
+      "name": "Rice 2kg",
+      "quantity": 10,
+      "unit_price": 4.6,
+      "total": 46.0
+    },
+    {
+      "name": "Cappuccino",
+      "quantity": 1,
+      "unit_price": 3.75,
+      "total": 3.75
+    },
+    {
+      "name": "Coke Can",
+      "quantity": 4,
+      "unit_price": 1.5,
+      "total": 6.0
+    }
+  ],
+  "subtotal": 55.75,
+  "tax": 0.0,
+  "total": 55.75,
+  "style": "handwritten"
+}

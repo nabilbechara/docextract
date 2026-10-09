@@ -1,0 +1,22 @@
+{
+  "vendor": "Green Market",
+  "date": "2026-05-12",
+  "line_items": [
+    {
+      "name": "Hammer",
+      "quantity": 3,
+      "unit_price": 12.0,
+      "total": 36.0
+    },
+    {
+      "name": "Notebook A5",
+      "quantity": 2,
+      "unit_price": 2.75,
+      "total": 5.5
+    }
+  ],
+  "subtotal": 41.5,
+  "tax": 0.0,
+  "total": 41.5,
+  "style": "printed"
+}

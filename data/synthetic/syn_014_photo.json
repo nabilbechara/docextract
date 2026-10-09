@@ -1,0 +1,28 @@
+{
+  "vendor": "Al Amal Bakery",
+  "date": "2026-10-02",
+  "line_items": [
+    {
+      "name": "Croissant",
+      "quantity": 4,
+      "unit_price": 2.2,
+      "total": 8.8
+    },
+    {
+      "name": "Batteries AA x4",
+      "quantity": 1,
+      "unit_price": 6.0,
+      "total": 6.0
+    },
+    {
+      "name": "Paint 1L",
+      "quantity": 2,
+      "unit_price": 18.5,
+      "total": 37.0
+    }
+  ],
+  "subtotal": 51.8,
+  "tax": 5.18,
+  "total": 56.98,
+  "style": "photo"
+}

@@ -1,0 +1,40 @@
+{
+  "vendor": "Pharma Plus",
+  "date": "2026-03-14",
+  "line_items": [
+    {
+      "name": "Cappuccino",
+      "quantity": 1,
+      "unit_price": 3.75,
+      "total": 3.75
+    },
+    {
+      "name": "Water 500ml",
+      "quantity": 2,
+      "unit_price": 1.0,
+      "total": 2.0
+    },
+    {
+      "name": "Batteries AA x4",
+      "quantity": 2,
+      "unit_price": 6.0,
+      "total": 12.0
+    },
+    {
+      "name": "Notebook A5",
+      "quantity": 2,
+      "unit_price": 2.75,
+      "total": 5.5
+    },
+    {
+      "name": "Margherita Pizza",
+      "quantity": 10,
+      "unit_price": 11.0,
+      "total": 110.0
+    }
+  ],
+  "subtotal": 133.25,
+  "tax": 14.66,
+  "total": 147.91,
+  "style": "photo"
+}

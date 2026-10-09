@@ -1,0 +1,52 @@
+{
+  "vendor": "Tony's Pizza",
+  "date": "2026-09-01",
+  "line_items": [
+    {
+      "name": "Rice 2kg",
+      "quantity": 1,
+      "unit_price": 4.6,
+      "total": 4.6
+    },
+    {
+      "name": "Paint 1L",
+      "quantity": 4,
+      "unit_price": 18.5,
+      "total": 74.0
+    },
+    {
+      "name": "Tomatoes 1kg",
+      "quantity": 3,
+      "unit_price": 2.1,
+      "total": 6.3
+    },
+    {
+      "name": "Labneh",
+      "quantity": 4,
+      "unit_price": 3.3,
+      "total": 13.2
+    },
+    {
+      "name": "Paracetamol 500mg",
+      "quantity": 1,
+      "unit_price": 3.4,
+      "total": 3.4
+    },
+    {
+      "name": "Hammer",
+      "quantity": 5,
+      "unit_price": 12.0,
+      "total": 60.0
+    },
+    {
+      "name": "Olive Oil 1L",
+      "quantity": 1,
+      "unit_price": 9.9,
+      "total": 9.9
+    }
+  ],
+  "subtotal": 171.4,
+  "tax": 17.14,
+  "total": 188.54,
+  "style": "photo"
+}

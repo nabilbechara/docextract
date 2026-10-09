@@ -1,0 +1,22 @@
+{
+  "vendor": "Book Corner",
+  "date": "2026-12-04",
+  "line_items": [
+    {
+      "name": "Espresso",
+      "quantity": 2,
+      "unit_price": 2.5,
+      "total": 5.0
+    },
+    {
+      "name": "Paracetamol 500mg",
+      "quantity": 2,
+      "unit_price": 3.4,
+      "total": 6.8
+    }
+  ],
+  "subtotal": 11.8,
+  "tax": 0.0,
+  "total": 11.8,
+  "style": "printed"
+}

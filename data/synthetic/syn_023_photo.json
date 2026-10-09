@@ -1,0 +1,40 @@
+{
+  "vendor": "Hardware Hub",
+  "date": "2026-05-18",
+  "line_items": [
+    {
+      "name": "Croissant",
+      "quantity": 10,
+      "unit_price": 2.2,
+      "total": 22.0
+    },
+    {
+      "name": "Margherita Pizza",
+      "quantity": 2,
+      "unit_price": 11.0,
+      "total": 22.0
+    },
+    {
+      "name": "Labneh",
+      "quantity": 4,
+      "unit_price": 3.3,
+      "total": 13.2
+    },
+    {
+      "name": "Water 500ml",
+      "quantity": 3,
+      "unit_price": 1.0,
+      "total": 3.0
+    },
+    {
+      "name": "Bandages",
+      "quantity": 4,
+      "unit_price": 5.25,
+      "total": 21.0
+    }
+  ],
+  "subtotal": 81.2,
+  "tax": 8.12,
+  "total": 89.32,
+  "style": "photo"
+}

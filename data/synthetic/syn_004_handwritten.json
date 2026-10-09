@@ -1,0 +1,28 @@
+{
+  "vendor": "Green Market",
+  "date": "2026-04-27",
+  "line_items": [
+    {
+      "name": "Manakish Zaatar",
+      "quantity": 10,
+      "unit_price": 1.25,
+      "total": 12.5
+    },
+    {
+      "name": "Notebook A5",
+      "quantity": 2,
+      "unit_price": 2.75,
+      "total": 5.5
+    },
+    {
+      "name": "Paracetamol 500mg",
+      "quantity": 3,
+      "unit_price": 3.4,
+      "total": 10.2
+    }
+  ],
+  "subtotal": 28.2,
+  "tax": 0.0,
+  "total": 28.2,
+  "style": "handwritten"
+}

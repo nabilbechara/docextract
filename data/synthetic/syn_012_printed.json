@@ -1,0 +1,28 @@
+{
+  "vendor": "Cafe Beirut",
+  "date": "2026-03-13",
+  "line_items": [
+    {
+      "name": "Screws M4 (box)",
+      "quantity": 5,
+      "unit_price": 4.99,
+      "total": 24.95
+    },
+    {
+      "name": "Pen Blue",
+      "quantity": 2,
+      "unit_price": 0.8,
+      "total": 1.6
+    },
+    {
+      "name": "Tomatoes 1kg",
+      "quantity": 4,
+      "unit_price": 2.1,
+      "total": 8.4
+    }
+  ],
+  "subtotal": 34.95,
+  "tax": 0.0,
+  "total": 34.95,
+  "style": "printed"
+}

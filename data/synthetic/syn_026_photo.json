@@ -1,0 +1,28 @@
+{
+  "vendor": "Green Market",
+  "date": "2026-03-26",
+  "line_items": [
+    {
+      "name": "Olive Oil 1L",
+      "quantity": 10,
+      "unit_price": 9.9,
+      "total": 99.0
+    },
+    {
+      "name": "Manakish Zaatar",
+      "quantity": 2,
+      "unit_price": 1.25,
+      "total": 2.5
+    },
+    {
+      "name": "Cappuccino",
+      "quantity": 1,
+      "unit_price": 3.75,
+      "total": 3.75
+    }
+  ],
+  "subtotal": 105.25,
+  "tax": 11.58,
+  "total": 116.83,
+  "style": "photo"
+}

@@ -1,0 +1,46 @@
+{
+  "vendor": "Hardware Hub",
+  "date": "2026-02-15",
+  "line_items": [
+    {
+      "name": "Batteries AA x4",
+      "quantity": 2,
+      "unit_price": 6.0,
+      "total": 12.0
+    },
+    {
+      "name": "Margherita Pizza",
+      "quantity": 1,
+      "unit_price": 11.0,
+      "total": 11.0
+    },
+    {
+      "name": "Croissant",
+      "quantity": 1,
+      "unit_price": 2.2,
+      "total": 2.2
+    },
+    {
+      "name": "Paint 1L",
+      "quantity": 1,
+      "unit_price": 18.5,
+      "total": 18.5
+    },
+    {
+      "name": "Bandages",
+      "quantity": 2,
+      "unit_price": 5.25,
+      "total": 10.5
+    },
+    {
+      "name": "Water 500ml",
+      "quantity": 5,
+      "unit_price": 1.0,
+      "total": 5.0
+    }
+  ],
+  "subtotal": 59.2,
+  "tax": 5.92,
+  "total": 65.12,
+  "style": "handwritten"
+}

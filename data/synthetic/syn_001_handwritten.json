@@ -1,0 +1,40 @@
+{
+  "vendor": "Tony's Pizza",
+  "date": "2026-04-15",
+  "line_items": [
+    {
+      "name": "Cappuccino",
+      "quantity": 10,
+      "unit_price": 3.75,
+      "total": 37.5
+    },
+    {
+      "name": "Espresso",
+      "quantity": 1,
+      "unit_price": 2.5,
+      "total": 2.5
+    },
+    {
+      "name": "Croissant",
+      "quantity": 10,
+      "unit_price": 2.2,
+      "total": 22.0
+    },
+    {
+      "name": "Hammer",
+      "quantity": 2,
+      "unit_price": 12.0,
+      "total": 24.0
+    },
+    {
+      "name": "Paint 1L",
+      "quantity": 10,
+      "unit_price": 18.5,
+      "total": 185.0
+    }
+  ],
+  "subtotal": 271.0,
+  "tax": 29.81,
+  "total": 300.81,
+  "style": "handwritten"
+}

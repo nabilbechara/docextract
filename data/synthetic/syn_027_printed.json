@@ -1,0 +1,40 @@
+{
+  "vendor": "Book Corner",
+  "date": "2026-05-11",
+  "line_items": [
+    {
+      "name": "Manakish Zaatar",
+      "quantity": 2,
+      "unit_price": 1.25,
+      "total": 2.5
+    },
+    {
+      "name": "Paracetamol 500mg",
+      "quantity": 2,
+      "unit_price": 3.4,
+      "total": 6.8
+    },
+    {
+      "name": "Paint 1L",
+      "quantity": 5,
+      "unit_price": 18.5,
+      "total": 92.5
+    },
+    {
+      "name": "Labneh",
+      "quantity": 1,
+      "unit_price": 3.3,
+      "total": 3.3
+    },
+    {
+      "name": "Tomatoes 1kg",
+      "quantity": 2,
+      "unit_price": 2.1,
+      "total": 4.2
+    }
+  ],
+  "subtotal": 109.3,
+  "tax": 0.0,
+  "total": 109.3,
+  "style": "printed"
+}

@@ -1,0 +1,34 @@
+{
+  "vendor": "Al Amal Bakery",
+  "date": "2026-07-18",
+  "line_items": [
+    {
+      "name": "Cappuccino",
+      "quantity": 2,
+      "unit_price": 3.75,
+      "total": 7.5
+    },
+    {
+      "name": "Espresso",
+      "quantity": 1,
+      "unit_price": 2.5,
+      "total": 2.5
+    },
+    {
+      "name": "Margherita Pizza",
+      "quantity": 5,
+      "unit_price": 11.0,
+      "total": 55.0
+    },
+    {
+      "name": "Chicken Wrap",
+      "quantity": 10,
+      "unit_price": 6.5,
+      "total": 65.0
+    }
+  ],
+  "subtotal": 130.0,
+  "tax": 13.0,
+  "total": 143.0,
+  "style": "printed"
+}

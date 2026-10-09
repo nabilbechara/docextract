@@ -1,0 +1,34 @@
+{
+  "vendor": "Al Amal Bakery",
+  "date": "2026-08-18",
+  "line_items": [
+    {
+      "name": "Water 500ml",
+      "quantity": 3,
+      "unit_price": 1.0,
+      "total": 3.0
+    },
+    {
+      "name": "Croissant",
+      "quantity": 3,
+      "unit_price": 2.2,
+      "total": 6.6
+    },
+    {
+      "name": "Notebook A5",
+      "quantity": 2,
+      "unit_price": 2.75,
+      "total": 5.5
+    },
+    {
+      "name": "Batteries AA x4",
+      "quantity": 1,
+      "unit_price": 6.0,
+      "total": 6.0
+    }
+  ],
+  "subtotal": 21.1,
+  "tax": 2.11,
+  "total": 23.21,
+  "style": "photo"
+}
